@@ -1,0 +1,145 @@
+
+#include <IRremote.hpp>
+
+// IR RECEIVER
+const int IR_RECEIVE_PIN = 2;
+
+// LEFT MOTOR - L293D
+const int ENA = 5;
+const int IN1 = 4;
+const int IN2 = 3;
+
+// RIGHT MOTOR - L293D
+const int ENB = 6;
+const int IN3 = 7;
+const int IN4 = 8;
+
+// CONVEYOR MOTOR
+const int conveyorPin = 12;
+
+// REMOTE COMMANDS
+const int LEFT_CMD  = 0x4;
+const int RIGHT_CMD = 0x6;
+const int DOWN_CMD  = 0x8;
+const int UP_CMD    = 0xA;
+
+// Conveyor state
+bool conveyorOn = false;
+
+void setup() {
+  pinMode(ENA, OUTPUT);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+
+  pinMode(ENB, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+
+  pinMode(conveyorPin, OUTPUT);
+
+  IrReceiver.begin(IR_RECEIVE_PIN, ENABLE_LED_FEEDBACK);
+
+  stopRobot();
+  digitalWrite(conveyorPin, LOW);
+}
+
+void loop() {
+
+  if (IrReceiver.decode()) {
+
+    int command = IrReceiver.decodedIRData.command;
+
+    // UP = FORWARD
+    if (command == UP_CMD) {
+      moveForward();
+      conveyorOn = true;
+    }
+
+    // LEFT
+    else if (command == LEFT_CMD) {
+      turnLeft();
+      conveyorOn = true;
+    }
+
+    // RIGHT
+    else if (command == RIGHT_CMD) {
+      turnRight();
+      conveyorOn = true;
+    }
+
+    // DOWN = STOP
+    else if (command == DOWN_CMD) {
+      stopRobot();
+      conveyorOn = false;
+    }
+
+    IrReceiver.resume();
+  }
+
+  // Conveyor follows its current state
+  if (conveyorOn) {
+    digitalWrite(conveyorPin, HIGH);
+  } else {
+    digitalWrite(conveyorPin, LOW);
+  }
+}
+
+// -------------------------
+// MOVE FORWARD
+// -------------------------
+void moveForward() {
+
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+
+  analogWrite(ENA, 117);
+  analogWrite(ENB, 229);
+}
+
+// -------------------------
+// TURN LEFT
+// -------------------------
+void turnLeft() {
+
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+
+  analogWrite(ENA, 0);
+  analogWrite(ENB, 200);
+}
+
+// -------------------------
+// TURN RIGHT
+// -------------------------
+void turnRight() {
+
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+
+  analogWrite(ENA, 200);
+  analogWrite(ENB, 0);
+}
+
+// -------------------------
+// STOP ROBOT
+// -------------------------
+void stopRobot() {
+
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+
+  analogWrite(ENA, 0);
+  analogWrite(ENB, 0);
+}
